@@ -133,6 +133,15 @@ public interface CryptoSuite {
 
         }
 
+        public static CryptoSuite getCryptoSuite() throws IllegalAccessException, InstantiationException,
+                ClassNotFoundException, CryptoException, InvalidArgumentException, NoSuchMethodException,
+                InvocationTargetException {
+            Properties properties = new Properties();
+            properties.setProperty("org.hyperledger.fabric.sdk.hash_algorithm","SHA2");
+            return CryptoSuiteFactory.getDefault().getCryptoSuite(properties);
+        }
+
+
         /**
          * Get a crypto suite with the default factory with default settings.
          * Settings which can define such parameters such as curve strength, are specific to the crypto factory.
