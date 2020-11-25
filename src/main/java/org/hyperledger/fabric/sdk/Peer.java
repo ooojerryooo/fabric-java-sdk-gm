@@ -40,6 +40,7 @@ import org.hyperledger.fabric.sdk.exception.PeerEventingServiceException;
 import org.hyperledger.fabric.sdk.exception.PeerException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric.sdk.helper.Config;
+import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.certgen.TLSCertificateKeyPair;
 import org.hyperledger.fabric.sdk.transaction.TransactionContext;
 
@@ -76,16 +77,17 @@ public class Peer implements Serializable {
     private transient boolean connected = false; // has this peer connected.
     private String endPoint = null;
     private String protocol = null;
+    private CryptoSuite cryptoSuite;
 
     // The Peer has successfully connected.
     boolean hasConnected() {
         return connected;
     }
 
-    Peer(String name, String grpcURL, Properties properties) throws InvalidArgumentException {
+    Peer(String name, String grpcURL, Properties properties, CryptoSuite cryptoSuite) throws InvalidArgumentException {
         reconnectCount = new AtomicLong(0L);
         id = config.getNextID();
-
+        this.cryptoSuite = cryptoSuite;
         Exception e = checkGrpcUrl(grpcURL);
         if (e != null) {
             throw new InvalidArgumentException("Bad peer url.", e);
@@ -104,9 +106,9 @@ public class Peer implements Serializable {
 
     }
 
-    static Peer createNewInstance(String name, String grpcURL, Properties properties) throws InvalidArgumentException {
+    static Peer createNewInstance(String name, String grpcURL, Properties properties, CryptoSuite cryptoSuite) throws InvalidArgumentException {
 
-        return new Peer(name, grpcURL, properties);
+        return new Peer(name, grpcURL, properties, cryptoSuite);
     }
 
     /**
@@ -142,7 +144,7 @@ public class Peer implements Serializable {
         this.transactionContext = transactionContext.retryTransactionSameContext();
         if (peerEventingClient == null && !shutdown) {
             peerEventingClient = new PeerEventServiceClient(this,
-                Endpoint.createEndpoint(channel.getCryptoSuite(), url, properties),
+                Endpoint.createEndpoint(this.cryptoSuite, url, properties),
                 properties,
                 peersOptions);
 
@@ -246,7 +248,7 @@ public class Peer implements Serializable {
             if (IS_TRACE_LEVEL) {
                 logger.trace(format("Channel %s creating new endorser client %s", channelName, toString()));
             }
-            Endpoint endpoint = Endpoint.createEndpoint(this.channel.getCryptoSuite(), url, properties);
+            Endpoint endpoint = Endpoint.createEndpoint(this.cryptoSuite, url, properties);
             foundClientTLSCertificateDigest = true;
             clientTLSCertificateDigest = endpoint.getClientTLSCertificateDigest();
             localEndorserClient = new EndorserClient(channelName, name, url, endpoint.getChannelBuilder());
@@ -297,7 +299,7 @@ public class Peer implements Serializable {
         if (lclientTLSCertificateDigest == null) {
             if (!foundClientTLSCertificateDigest) {
                 foundClientTLSCertificateDigest = true;
-                Endpoint endpoint = Endpoint.createEndpoint(channel.getCryptoSuite(), url, properties);
+                Endpoint endpoint = Endpoint.createEndpoint(this.cryptoSuite, url, properties);
                 lclientTLSCertificateDigest = endpoint.getClientTLSCertificateDigest();
             }
         }
@@ -429,7 +431,7 @@ public class Peer implements Serializable {
 
                     if (!shutdown) {
                         PeerEventServiceClient lpeerEventingClient = new PeerEventServiceClient(Peer.this,
-                            Endpoint.createEndpoint(channel.getCryptoSuite(), url, properties),
+                            Endpoint.createEndpoint(cryptoSuite, url, properties),
                             properties,
                             peerOptions);
                         lpeerEventingClient.connect(fltransactionContext);
@@ -463,7 +465,7 @@ public class Peer implements Serializable {
         properties.put("clientKeyBytes", tlsCertificateKeyPair.getKeyPemBytes());
         properties.put("clientCertBytes", tlsCertificateKeyPair.getCertPEMBytes());
 
-        Endpoint endpoint = Endpoint.createEndpoint(channel.getCryptoSuite(), url, properties);
+        Endpoint endpoint = Endpoint.createEndpoint(this.cryptoSuite, url, properties);
         foundClientTLSCertificateDigest = true;
         clientTLSCertificateDigest = endpoint.getClientTLSCertificateDigest();
         removeEndorserClient(true);

@@ -41,6 +41,7 @@ import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.EventHubException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.helper.Config;
+import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.transaction.ProtoUtils;
 import org.hyperledger.fabric.sdk.transaction.TransactionContext;
 
@@ -83,6 +84,7 @@ public class EventHub implements Serializable {
     private transient long lastBlockNumber;
     private transient BlockEvent lastBlockEvent;
     private String channelName;
+    private CryptoSuite cryptoSuite;
 
     /**
      * Get disconnected time.
@@ -141,7 +143,7 @@ public class EventHub implements Serializable {
 
     private long lastConnectedAttempt;
 
-    EventHub(String name, String grpcURL, ExecutorService executorService, Properties properties)
+    EventHub(String name, String grpcURL, ExecutorService executorService, Properties properties, CryptoSuite cryptoSuite)
         throws InvalidArgumentException {
 
         Exception e = checkGrpcUrl(grpcURL);
@@ -153,7 +155,7 @@ public class EventHub implements Serializable {
         if (StringUtil.isNullOrEmpty(name)) {
             throw new InvalidArgumentException("Invalid name for eventHub");
         }
-
+        this.cryptoSuite = cryptoSuite;
         this.url = grpcURL;
         this.name = name;
         this.executorService = executorService;
@@ -169,9 +171,9 @@ public class EventHub implements Serializable {
      * @param properties
      */
 
-    static EventHub createNewInstance(String name, String url, ExecutorService executorService, Properties properties)
+    static EventHub createNewInstance(String name, String url, ExecutorService executorService, Properties properties, CryptoSuite cryptoSuite)
         throws InvalidArgumentException {
-        return new EventHub(name, url, executorService, properties);
+        return new EventHub(name, url, executorService, properties,cryptoSuite);
     }
 
     /**
@@ -214,7 +216,7 @@ public class EventHub implements Serializable {
 
         lastConnectedAttempt = System.currentTimeMillis();
 
-        Endpoint endpoint = Endpoint.createEndpoint(channel.getCryptoSuite(), url, properties);
+        Endpoint endpoint = Endpoint.createEndpoint(this.cryptoSuite, url, properties);
         managedChannel = endpoint.getChannelBuilder().build();
 
         clientTLSCertificateDigest = endpoint.getClientTLSCertificateDigest();

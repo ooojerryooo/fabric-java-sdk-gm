@@ -28,6 +28,7 @@ import org.hyperledger.fabric.protos.orderer.Ab.DeliverResponse;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric.sdk.helper.Config;
+import org.hyperledger.fabric.sdk.security.CryptoSuite;
 
 import static java.lang.String.format;
 import static org.hyperledger.fabric.sdk.helper.Utils.checkGrpcUrl;
@@ -52,8 +53,9 @@ public class Orderer implements Serializable {
     private transient byte[] clientTLSCertificateDigest;
     private String channelName = "";
     private transient String id = config.getNextID();
+    private CryptoSuite cryptoSuite;
 
-    Orderer(String name, String url, Properties properties) throws InvalidArgumentException {
+    Orderer(String name, String url, Properties properties, CryptoSuite cryptoSuite) throws InvalidArgumentException {
 
         if (StringUtil.isNullOrEmpty(name)) {
             throw new InvalidArgumentException("Invalid name for orderer");
@@ -62,7 +64,7 @@ public class Orderer implements Serializable {
         if (e != null) {
             throw new InvalidArgumentException(e);
         }
-
+        this.cryptoSuite = cryptoSuite;
         this.name = name;
         this.url = url;
         this.properties = properties == null ? new Properties() : (Properties) properties.clone(); //keep our own copy.
@@ -70,15 +72,15 @@ public class Orderer implements Serializable {
 
     }
 
-    static Orderer createNewInstance(String name, String url, Properties properties) throws InvalidArgumentException {
-        return new Orderer(name, url, properties);
+    static Orderer createNewInstance(String name, String url, Properties properties, CryptoSuite cryptoSuite) throws InvalidArgumentException {
+        return new Orderer(name, url, properties, cryptoSuite);
 
     }
 
     byte[] getClientTLSCertificateDigest() {
         if (null == clientTLSCertificateDigest) {
-            clientTLSCertificateDigest = Endpoint.createEndpoint(channel.getCryptoSuite(), url, properties)
-                .getClientTLSCertificateDigest();
+            clientTLSCertificateDigest = Endpoint.createEndpoint(this.cryptoSuite, url, properties)
+                    .getClientTLSCertificateDigest();
         }
         return clientTLSCertificateDigest;
     }
@@ -137,8 +139,8 @@ public class Orderer implements Serializable {
 
         if (null != this.channel && this.channel != channel) {
             throw new InvalidArgumentException(
-                format("Can not add orderer %s to channel %s because it already belongs to channel %s.",
-                    name, channel.getName(), this.channel.getName()));
+                    format("Can not add orderer %s to channel %s because it already belongs to channel %s.",
+                            name, channel.getName(), this.channel.getName()));
         }
         logger.debug(format("%s setting channel %s", toString(), channel));
 
@@ -201,8 +203,8 @@ public class Orderer implements Serializable {
         if (localOrdererClient == null || !localOrdererClient.isChannelActive()) {
             logger.trace(format("Channel %s creating new orderer client %s", channelName, this.toString()));
             localOrdererClient = new OrdererClient(this,
-                Endpoint.createEndpoint(channel.getCryptoSuite(), url, properties).getChannelBuilder(),
-                properties);
+                    Endpoint.createEndpoint(this.cryptoSuite, url, properties).getChannelBuilder(),
+                    properties);
             ordererClient = localOrdererClient;
 
         }
@@ -216,7 +218,7 @@ public class Orderer implements Serializable {
 
         if (null != localOrderClient) {
             logger.debug(format("Channel %s removing orderer client %s, isActive: %b", channelName, toString(),
-                localOrderClient.isChannelActive()));
+                    localOrderClient.isChannelActive()));
             try {
                 localOrderClient.shutdown(force);
             } catch (Exception e) {
@@ -275,8 +277,8 @@ public class Orderer implements Serializable {
             }
 
             ltoString =
-                "Orderer{id: " + id + ", channelName: " + channelName + ", name:" + name + ", url: " + url + mspid
-                    + "}";
+                    "Orderer{id: " + id + ", channelName: " + channelName + ", name:" + name + ", url: " + url + mspid
+                            + "}";
             toString = ltoString;
         }
         return ltoString;

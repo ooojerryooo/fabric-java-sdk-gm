@@ -297,7 +297,7 @@ public class HFClient {
      * @param name       name of peer.
      * @param grpcURL    to the peer's location
      * @param properties <p>
-     *                   Supported properties
+     *                   es
      *                   <ul>
      *                   <li>pemFile - File location for x509 pem certificate for SSL.</li>
      *                   <li>pemBytes - byte array for x509 pem certificates for SSL</li>
@@ -336,7 +336,7 @@ public class HFClient {
 
     public Peer newPeer(String name, String grpcURL, Properties properties) throws InvalidArgumentException {
         clientCheck();
-        return Peer.createNewInstance(name, grpcURL, properties);
+        return Peer.createNewInstance(name, grpcURL, properties, cryptoSuite);
     }
 
     /**
@@ -350,7 +350,7 @@ public class HFClient {
 
     public Peer newPeer(String name, String grpcURL) throws InvalidArgumentException {
         clientCheck();
-        return Peer.createNewInstance(name, grpcURL, null);
+        return Peer.createNewInstance(name, grpcURL, null, cryptoSuite);
     }
 
     /**
@@ -468,7 +468,7 @@ public class HFClient {
 
     public EventHub newEventHub(String name, String grpcURL, Properties properties) throws InvalidArgumentException {
         clientCheck();
-        return EventHub.createNewInstance(name, grpcURL, executorService, properties);
+        return EventHub.createNewInstance(name, grpcURL, executorService, properties, cryptoSuite);
     }
 
     /**
@@ -505,7 +505,7 @@ public class HFClient {
      * @param name       name of Orderer.
      * @param grpcURL    url location of orderer grpc or grpcs protocol.
      * @param properties <p>
-     *                   Supported properties
+     *                   es
      *                   <ul>
      *                   <li>pemFile - File location for x509 pem certificate for SSL.</li>
      *                   <li>pemBytes - byte array for x509 pem certificates for SSL</li>
@@ -545,7 +545,7 @@ public class HFClient {
 
     public Orderer newOrderer(String name, String grpcURL, Properties properties) throws InvalidArgumentException {
         clientCheck();
-        return Orderer.createNewInstance(name, grpcURL, properties);
+        return Orderer.createNewInstance(name, grpcURL, properties, cryptoSuite);
     }
 
     /**

@@ -112,7 +112,6 @@ import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric.sdk.helper.Config;
 import org.hyperledger.fabric.sdk.helper.DiagnosticFileDumper;
 import org.hyperledger.fabric.sdk.helper.Utils;
-import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.certgen.TLSCertificateBuilder;
 import org.hyperledger.fabric.sdk.security.certgen.TLSCertificateKeyPair;
 import org.hyperledger.fabric.sdk.transaction.GetConfigBlockBuilder;
@@ -213,9 +212,9 @@ public class Channel implements Serializable {
     }
 
     //add by bryan
-    public CryptoSuite getCryptoSuite() {
-        return client.getCryptoSuite();
-    }
+//    public CryptoSuite getCryptoSuite() {
+//        return client.getCryptoSuite();
+//    }
 
     private Channel(String name, HFClient hfClient, Orderer orderer, ChannelConfiguration channelConfiguration, byte[][] signers) throws InvalidArgumentException, TransactionException {
         this(name, hfClient, false);
