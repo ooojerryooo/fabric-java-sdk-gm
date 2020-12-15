@@ -297,7 +297,7 @@ public class HFClient {
      * @param name       name of peer.
      * @param grpcURL    to the peer's location
      * @param properties <p>
-     *                   es
+     *                   Supported properties
      *                   <ul>
      *                   <li>pemFile - File location for x509 pem certificate for SSL.</li>
      *                   <li>pemBytes - byte array for x509 pem certificates for SSL</li>
@@ -505,7 +505,7 @@ public class HFClient {
      * @param name       name of Orderer.
      * @param grpcURL    url location of orderer grpc or grpcs protocol.
      * @param properties <p>
-     *                   es
+     *                   Supported properties
      *                   <ul>
      *                   <li>pemFile - File location for x509 pem certificate for SSL.</li>
      *                   <li>pemBytes - byte array for x509 pem certificates for SSL</li>

@@ -14,7 +14,11 @@
 package org.hyperledger.fabric.sdk.transaction;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -201,7 +205,7 @@ public final class ProtoUtils {
                 if (null == suite) {
 
                     try {
-                        suite = CryptoSuite.Factory.getCryptoSuite(new Properties());
+                        suite = CryptoSuite.Factory.getCryptoSuite();
                     } catch (Exception e) {
                         //best try.
                     }

@@ -322,7 +322,7 @@ public class HFCAClient {
     public static HFCAClient createNewInstance(NetworkConfig.CAInfo caInfo) throws MalformedURLException, InvalidArgumentException {
 
         try {
-            return createNewInstance(caInfo, CryptoSuite.Factory.getCryptoSuite(new Properties()));
+            return createNewInstance(caInfo, CryptoSuite.Factory.getCryptoSuite());
         } catch (MalformedURLException e) {
             throw e;
         } catch (Exception e) {
@@ -392,7 +392,6 @@ public class HFCAClient {
 
         try {
             String body = request.toJson();
-            System.out.println("registerCsr = " + body);
             JsonObject resp = httpPost(url + HFCA_REGISTER, body, registrar);
             String secret = resp.getString("secret");
             if (secret == null) {
@@ -468,7 +467,6 @@ public class HFCAClient {
 
             if (pem == null) {
                 String csr = cryptoSuite.generateCertificationRequest(user+","+subject, keypair);
-                System.out.println("csr = \n" + csr);
                 req.setCSR(csr);
             }
 

@@ -3,8 +3,5 @@ target
 *.swo
 *.class
 .idea/
-.gradle/
 *.iml
 *.resources.prefs
-.vscode
-/src/main/java/com/

@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.helper.Config;
@@ -27,20 +28,19 @@ import org.hyperledger.fabric.sdk.helper.Config;
  * SDK's Default implementation of CryptoSuiteFactory.
  */
 public class HLSDKJCryptoSuiteFactory implements CryptoSuiteFactory {
-
     private static final Config config = Config.getConfig();
     private static final int SECURITY_LEVEL = config.getSecurityLevel();
     private static final String HASH_ALGORITHM = config.getHashAlgorithm();
-    private static final HLSDKJCryptoSuiteFactory INSTANCE = new HLSDKJCryptoSuiteFactory();
-    private static final Map<Properties, CryptoSuite> cache = new ConcurrentHashMap<>();
-    private static CryptoSuiteFactory theFACTORY = null;
 
     private HLSDKJCryptoSuiteFactory() {
+
     }
 
-    //modify by bryan
+    private static final Map<Properties, CryptoSuite> cache = new ConcurrentHashMap<>();
+
     @Override
-    public CryptoSuite getCryptoSuite(Properties properties) throws CryptoException {
+    public CryptoSuite getCryptoSuite(Properties properties) throws CryptoException, InvalidArgumentException {
+
         CryptoSuite ret = cache.get(properties);
         String hashalg = (String) properties.get("org.hyperledger.fabric.sdk.hash_algorithm");
         if ("SM3".equals(hashalg.toUpperCase())) {
@@ -62,14 +62,18 @@ public class HLSDKJCryptoSuiteFactory implements CryptoSuiteFactory {
             } catch (Exception e) {
                 throw new CryptoException(e.getMessage(), e);
             }
+
             cache.put(properties, ret);
+
         }
 
         return ret;
+
     }
 
     @Override
-    public CryptoSuite getCryptoSuite() throws CryptoException {
+    public CryptoSuite getCryptoSuite() throws CryptoException, InvalidArgumentException {
+
         Properties properties = new Properties();
         properties.put(Config.SECURITY_LEVEL, SECURITY_LEVEL);
         properties.put(Config.HASH_ALGORITHM, HASH_ALGORITHM);
@@ -77,38 +81,46 @@ public class HLSDKJCryptoSuiteFactory implements CryptoSuiteFactory {
         return getCryptoSuite(properties);
     }
 
+    private static final HLSDKJCryptoSuiteFactory INSTANCE = new HLSDKJCryptoSuiteFactory();
+
     static synchronized HLSDKJCryptoSuiteFactory instance() {
+
         return INSTANCE;
     }
 
-    static synchronized CryptoSuiteFactory getDefault()
-        throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+    private static CryptoSuiteFactory theFACTORY = null; // one and only factory.
+
+    static final synchronized CryptoSuiteFactory getDefault() throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
 
         if (null == theFACTORY) {
+
             String cf = config.getDefaultCryptoSuiteFactory();
-            if (null == cf || cf.isEmpty() || cf.equals(HLSDKJCryptoSuiteFactory.class.getName())) {
+            if (null == cf || cf.isEmpty() || cf.equals(HLSDKJCryptoSuiteFactory.class.getName())) { // Use this class as the factory.
+
                 theFACTORY = HLSDKJCryptoSuiteFactory.instance();
+
             } else {
+
                 // Invoke static method instance on factory class specified by config properties.
                 // In this case this class will no longer be used as the factory.
 
                 Class<?> aClass = Class.forName(cf);
+
                 Method method = aClass.getMethod("instance");
                 Object theFACTORYObject = method.invoke(null);
                 if (null == theFACTORYObject) {
-                    throw new InstantiationException(String.format(
-                        "Class specified by %s has instance method returning null.  Expected object implementing CryptoSuiteFactory interface.",
-                        cf));
+                    throw new InstantiationException(String.format("Class specified by %s has instance method returning null.  Expected object implementing CryptoSuiteFactory interface.", cf));
                 }
 
                 if (!(theFACTORYObject instanceof CryptoSuiteFactory)) {
 
-                    throw new InstantiationException(String.format(
-                        "Class specified by %s has instance method returning a class %s which does not implement interface CryptoSuiteFactory ",
-                        cf, theFACTORYObject.getClass().getName()));
+                    throw new InstantiationException(String.format("Class specified by %s has instance method returning a class %s which does not implement interface CryptoSuiteFactory ",
+                            cf, theFACTORYObject.getClass().getName()));
 
                 }
+
                 theFACTORY = (CryptoSuiteFactory) theFACTORYObject;
+
             }
         }
 

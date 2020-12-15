@@ -14,13 +14,6 @@
 
 package org.hyperledger.fabric.sdk;
 
-import static java.lang.String.format;
-import static org.hyperledger.fabric.sdk.helper.Utils.checkGrpcUrl;
-import static org.hyperledger.fabric.sdk.helper.Utils.isNullOrEmpty;
-import static org.hyperledger.fabric.sdk.helper.Utils.parseGrpcUrl;
-
-import com.google.common.util.concurrent.ListenableFuture;
-import io.netty.util.internal.StringUtil;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -29,6 +22,9 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import io.netty.util.internal.StringUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.protos.discovery.Protocol;
@@ -43,6 +39,11 @@ import org.hyperledger.fabric.sdk.helper.Config;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.certgen.TLSCertificateKeyPair;
 import org.hyperledger.fabric.sdk.transaction.TransactionContext;
+
+import static java.lang.String.format;
+import static org.hyperledger.fabric.sdk.helper.Utils.checkGrpcUrl;
+import static org.hyperledger.fabric.sdk.helper.Utils.isNullOrEmpty;
+import static org.hyperledger.fabric.sdk.helper.Utils.parseGrpcUrl;
 
 /**
  * The Peer class represents a peer to which SDK sends deploy, or query proposals requests.
@@ -141,19 +142,23 @@ public class Peer implements Serializable {
     }
 
     void initiateEventing(TransactionContext transactionContext, PeerOptions peersOptions) throws TransactionException {
+
         this.transactionContext = transactionContext.retryTransactionSameContext();
+
         if (peerEventingClient == null && !shutdown) {
-            peerEventingClient = new PeerEventServiceClient(this,
-                Endpoint.createEndpoint(this.cryptoSuite, url, properties),
-                properties,
-                peersOptions);
+
+            peerEventingClient = new PeerEventServiceClient(this, Endpoint.createEndpoint(this.cryptoSuite, url, properties), properties, peersOptions);
 
             peerEventingClient.connect(transactionContext);
+
         }
+
     }
 
     /**
      * The channel the peer is set on.
+     *
+     * @return
      */
 
     Channel getChannel() {
@@ -175,8 +180,7 @@ public class Peer implements Serializable {
     void setChannel(Channel channel) throws InvalidArgumentException {
 
         if (null != this.channel) {
-            throw new InvalidArgumentException(
-                format("Can not add peer %s to channel %s because it already belongs to channel %s.",
+            throw new InvalidArgumentException(format("Can not add peer %s to channel %s because it already belongs to channel %s.",
                     name, channel.getName(), this.channel.getName()));
         }
         logger.debug(format("%s setting channel to %s, from %s", toString(), "" + channel, "" + this.channel));
@@ -224,7 +228,7 @@ public class Peer implements Serializable {
     }
 
     ListenableFuture<FabricProposalResponse.ProposalResponse> sendProposalAsync(FabricProposal.SignedProposal proposal)
-        throws PeerException, InvalidArgumentException {
+            throws PeerException, InvalidArgumentException {
         checkSendProposal(proposal);
 
         if (IS_DEBUG_LEVEL) {
@@ -266,8 +270,7 @@ public class Peer implements Serializable {
 
         if (null != localEndorserClient) {
             if (IS_DEBUG_LEVEL) {
-                logger.debug(format("Peer %s removing endorser client %s, isActive: %b", toString(),
-                    localEndorserClient.toString(), localEndorserClient.isChannelActive()));
+                logger.debug(format("Peer %s removing endorser client %s, isActive: %b", toString(), localEndorserClient.toString(), localEndorserClient.isChannelActive()));
             }
             try {
                 localEndorserClient.shutdown(force);
@@ -279,7 +282,7 @@ public class Peer implements Serializable {
     }
 
     ListenableFuture<Protocol.Response> sendDiscoveryRequestAsync(Protocol.SignedRequest discoveryRequest)
-        throws PeerException, InvalidArgumentException {
+            throws PeerException, InvalidArgumentException {
 
         logger.debug(format("peer.sendDiscoveryRequstAsync %s", toString()));
 
@@ -309,7 +312,7 @@ public class Peer implements Serializable {
     }
 
     private void checkSendProposal(FabricProposal.SignedProposal proposal) throws
-        PeerException, InvalidArgumentException {
+            PeerException, InvalidArgumentException {
 
         if (shutdown) {
             throw new PeerException(format("%s was shutdown.", toString()));
@@ -369,7 +372,7 @@ public class Peer implements Serializable {
     }
 
     void reconnectPeerEventServiceClient(final PeerEventServiceClient failedPeerEventServiceClient,
-        final Throwable throwable) {
+                                         final Throwable throwable) {
         if (shutdown) {
             logger.debug(toString() + "not reconnecting PeerEventServiceClient shutdown ");
             return;
@@ -391,8 +394,7 @@ public class Peer implements Serializable {
         final TransactionContext fltransactionContext = ltransactionContext.retryTransactionSameContext();
 
         final ExecutorService executorService = getExecutorService();
-        final PeerOptions peerOptions =
-            null != failedPeerEventServiceClient.getPeerOptions() ? failedPeerEventServiceClient.getPeerOptions() :
+        final PeerOptions peerOptions = null != failedPeerEventServiceClient.getPeerOptions() ? failedPeerEventServiceClient.getPeerOptions() :
                 PeerOptions.createPeerOptions();
         if (!shutdown && executorService != null && !executorService.isShutdown() && !executorService.isTerminated()) {
 
@@ -419,8 +421,7 @@ public class Peer implements Serializable {
 
                 @Override
                 public void reconnect(Long startBLockNumber) throws TransactionException {
-                    logger.trace(format("%s reconnecting. Starting block number: %s", Peer.this.toString(),
-                        startBLockNumber == null ? "newest" : startBLockNumber));
+                    logger.trace(format("%s reconnecting. Starting block number: %s", Peer.this.toString(), startBLockNumber == null ? "newest" : startBLockNumber));
                     reconnectCount.getAndIncrement();
 
                     if (startBLockNumber == null) {
@@ -431,9 +432,7 @@ public class Peer implements Serializable {
 
                     if (!shutdown) {
                         PeerEventServiceClient lpeerEventingClient = new PeerEventServiceClient(Peer.this,
-                            Endpoint.createEndpoint(cryptoSuite, url, properties),
-                            properties,
-                            peerOptions);
+                            Endpoint.createEndpoint(cryptoSuite, url, properties), properties, peerOptions);
                         lpeerEventingClient.connect(fltransactionContext);
                         peerEventingClient = lpeerEventingClient;
                     }
@@ -519,6 +518,8 @@ public class Peer implements Serializable {
 
         /**
          * Last exception throw for failing connection
+         *
+         * @return
          */
 
         Throwable getExceptionThrown();
@@ -542,8 +543,7 @@ public class Peer implements Serializable {
                 if (thrown instanceof PeerEventingServiceException) {
                     // means we connected and got an error or connected but timout waiting on the response
                     // not going away.. sleep longer.
-                    sleepTime = Math.min(5000L,
-                        PEER_EVENT_RETRY_WAIT_TIME + event.getReconnectCount() * 100L); //wait longer if we connected.
+                    sleepTime = Math.min(5000L, PEER_EVENT_RETRY_WAIT_TIME + event.getReconnectCount() * 100L); //wait longer if we connected.
                     //don't flood server.
                 }
 
@@ -584,13 +584,11 @@ public class Peer implements Serializable {
     /**
      * Set class to handle peer eventing service  disconnects
      *
-     * @param newPeerEventingServiceDisconnectedHandler New handler to replace.  If set to null no retry will take
-     * place.
+     * @param newPeerEventingServiceDisconnectedHandler New handler to replace.  If set to null no retry will take place.
      * @return the old handler.
      */
 
-    public PeerEventingServiceDisconnected setPeerEventingServiceDisconnected(
-        PeerEventingServiceDisconnected newPeerEventingServiceDisconnectedHandler) {
+    public PeerEventingServiceDisconnected setPeerEventingServiceDisconnected(PeerEventingServiceDisconnected newPeerEventingServiceDisconnectedHandler) {
         PeerEventingServiceDisconnected ret = disconnectedHandler;
         disconnectedHandler = newPeerEventingServiceDisconnectedHandler;
         return ret;
@@ -683,8 +681,7 @@ public class Peer implements Serializable {
             if (properties != null && !isNullOrEmpty(properties.getProperty(PEER_ORGANIZATION_MSPID_PROPERTY))) {
                 mspid = ", mspid: " + properties.getProperty(PEER_ORGANIZATION_MSPID_PROPERTY);
             }
-            ltoString =
-                "Peer{ id: " + id + ", name: " + name + ", channelName: " + channelName + ", url: " + url + mspid + "}";
+            ltoString = "Peer{ id: " + id + ", name: " + name + ", channelName: " + channelName + ", url: " + url + mspid + "}";
             toString = ltoString;
         }
         return ltoString;

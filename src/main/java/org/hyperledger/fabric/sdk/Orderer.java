@@ -39,7 +39,6 @@ import static org.hyperledger.fabric.sdk.helper.Utils.parseGrpcUrl;
  * The Orderer class represents a orderer to which SDK sends deploy, invoke, or query requests.
  */
 public class Orderer implements Serializable {
-
     public static final String ORDERER_ORGANIZATION_MSPID_PROPERTY = "org.hyperledger.fabric.sdk.orderer.organization_mspid";
     private static final Config config = Config.getConfig();
     private static final Log logger = LogFactory.getLog(Orderer.class);
@@ -79,8 +78,7 @@ public class Orderer implements Serializable {
 
     byte[] getClientTLSCertificateDigest() {
         if (null == clientTLSCertificateDigest) {
-            clientTLSCertificateDigest = Endpoint.createEndpoint(this.cryptoSuite, url, properties)
-                    .getClientTLSCertificateDigest();
+            clientTLSCertificateDigest = Endpoint.createEndpoint(this.cryptoSuite, url, properties).getClientTLSCertificateDigest();
         }
         return clientTLSCertificateDigest;
     }
@@ -138,9 +136,8 @@ public class Orderer implements Serializable {
         }
 
         if (null != this.channel && this.channel != channel) {
-            throw new InvalidArgumentException(
-                    format("Can not add orderer %s to channel %s because it already belongs to channel %s.",
-                            name, channel.getName(), this.channel.getName()));
+            throw new InvalidArgumentException(format("Can not add orderer %s to channel %s because it already belongs to channel %s.",
+                    name, channel.getName(), this.channel.getName()));
         }
         logger.debug(format("%s setting channel %s", toString(), channel));
 
@@ -202,9 +199,7 @@ public class Orderer implements Serializable {
 
         if (localOrdererClient == null || !localOrdererClient.isChannelActive()) {
             logger.trace(format("Channel %s creating new orderer client %s", channelName, this.toString()));
-            localOrdererClient = new OrdererClient(this,
-                    Endpoint.createEndpoint(this.cryptoSuite, url, properties).getChannelBuilder(),
-                    properties);
+            localOrdererClient = new OrdererClient(this, Endpoint.createEndpoint(this.cryptoSuite, url, properties).getChannelBuilder(), properties);
             ordererClient = localOrdererClient;
 
         }
@@ -217,8 +212,7 @@ public class Orderer implements Serializable {
         ordererClient = null;
 
         if (null != localOrderClient) {
-            logger.debug(format("Channel %s removing orderer client %s, isActive: %b", channelName, toString(),
-                    localOrderClient.isChannelActive()));
+            logger.debug(format("Channel %s removing orderer client %s, isActive: %b", channelName, toString(), localOrderClient.isChannelActive()));
             try {
                 localOrderClient.shutdown(force);
             } catch (Exception e) {
@@ -276,9 +270,7 @@ public class Orderer implements Serializable {
                 mspid = ", mspid: " + properties.getProperty(ORDERER_ORGANIZATION_MSPID_PROPERTY);
             }
 
-            ltoString =
-                    "Orderer{id: " + id + ", channelName: " + channelName + ", name:" + name + ", url: " + url + mspid
-                            + "}";
+            ltoString = "Orderer{id: " + id + ", channelName: " + channelName + ", name:" + name + ", url: " + url + mspid + "}";
             toString = ltoString;
         }
         return ltoString;

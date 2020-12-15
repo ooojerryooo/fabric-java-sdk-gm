@@ -14,16 +14,6 @@
 
 package org.hyperledger.fabric.sdk;
 
-import static java.lang.String.format;
-import static org.hyperledger.fabric.sdk.helper.Utils.checkGrpcUrl;
-
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import io.grpc.ManagedChannel;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
-import io.grpc.stub.StreamObserver;
-import io.netty.util.internal.StringUtil;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -32,7 +22,16 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import javax.xml.bind.DatatypeConverter;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
+import io.netty.util.internal.StringUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.protos.peer.EventsGrpc;
@@ -45,6 +44,9 @@ import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.transaction.ProtoUtils;
 import org.hyperledger.fabric.sdk.transaction.TransactionContext;
 
+import static java.lang.String.format;
+import static org.hyperledger.fabric.sdk.helper.Utils.checkGrpcUrl;
+
 /**
  * Class to manage fabric events.
  * <p>
@@ -52,7 +54,6 @@ import org.hyperledger.fabric.sdk.transaction.TransactionContext;
  */
 
 public class EventHub implements Serializable {
-
     private static final long serialVersionUID = 2882609588201108148L;
     private static final Config config = Config.getConfig();
     private transient String id = config.getNextID();
@@ -143,8 +144,7 @@ public class EventHub implements Serializable {
 
     private long lastConnectedAttempt;
 
-    EventHub(String name, String grpcURL, ExecutorService executorService, Properties properties, CryptoSuite cryptoSuite)
-        throws InvalidArgumentException {
+    EventHub(String name, String grpcURL, ExecutorService executorService, Properties properties, CryptoSuite cryptoSuite) throws InvalidArgumentException {
 
         Exception e = checkGrpcUrl(grpcURL);
         if (e != null) {
@@ -169,11 +169,11 @@ public class EventHub implements Serializable {
      * @param name
      * @param url
      * @param properties
+     * @return
      */
 
-    static EventHub createNewInstance(String name, String url, ExecutorService executorService, Properties properties, CryptoSuite cryptoSuite)
-        throws InvalidArgumentException {
-        return new EventHub(name, url, executorService, properties,cryptoSuite);
+    static EventHub createNewInstance(String name, String url, ExecutorService executorService, Properties properties, CryptoSuite cryptoSuite) throws InvalidArgumentException {
+        return new EventHub(name, url, executorService, properties, cryptoSuite);
     }
 
     /**
@@ -202,8 +202,7 @@ public class EventHub implements Serializable {
         return connect(transactionContext, false);
     }
 
-    synchronized boolean connect(final TransactionContext transactionContext, final boolean reconnection)
-        throws EventHubException {
+    synchronized boolean connect(final TransactionContext transactionContext, final boolean reconnection) throws EventHubException {
         if (connected) {
             logger.warn(format("%s already connected.", toString()));
             return true;
@@ -236,22 +235,19 @@ public class EventHub implements Serializable {
 
                         BlockEvent blockEvent = new BlockEvent(EventHub.this, event);
 
-                        logger.trace(
-                            format("%s got block number: %d", EventHub.this.toString(), blockEvent.getBlockNumber()));
+                        logger.trace(format("%s got block number: %d", EventHub.this.toString(), blockEvent.getBlockNumber()));
                         setLastBlockSeen(blockEvent);
 
                         eventQue.addBEvent(blockEvent);  //add to channel queue
                     } catch (InvalidProtocolBufferException e) {
-                        EventHubException eventHubException = new EventHubException(
-                            format("%s onNext error %s", this, e.getMessage()), e);
+                        EventHubException eventHubException = new EventHubException(format("%s onNext error %s", this, e.getMessage()), e);
                         logger.error(eventHubException.getMessage());
                         threw.add(eventHubException);
                     }
                 } else if (event.getEventCase() == PeerEvents.Event.EventCase.REGISTER) {
 
                     if (reconnectCount > 1) {
-                        logger.info(
-                            format("%s has reconnecting after %d attempts", EventHub.this.toString(), reconnectCount));
+                        logger.info(format("%s has reconnecting after %d attempts", EventHub.this.toString(), reconnectCount));
                     }
 
                     connected = true;
@@ -261,7 +257,7 @@ public class EventHub implements Serializable {
                     finishLatch.countDown();
                 } else {
                     logger.error(format("%s got a unexpected block type: %s",
-                        EventHub.this.toString(), event.getEventCase().name()));
+                            EventHub.this.toString(), event.getEventCase().name()));
                 }
             }
 
@@ -282,15 +278,12 @@ public class EventHub implements Serializable {
                 final boolean isTerminated = lmanagedChannel == null ? true : lmanagedChannel.isTerminated();
                 final boolean isChannelShutdown = lmanagedChannel == null ? true : lmanagedChannel.isShutdown();
 
-                if (EVENTHUB_RECONNECTION_WARNING_RATE > 1
-                    && reconnectCount % EVENTHUB_RECONNECTION_WARNING_RATE == 1) {
-                    logger.warn(format("%s terminated is %b shutdown is %b, retry count %d  has error %s.",
-                        EventHub.this.toString(), isTerminated, isChannelShutdown,
-                        reconnectCount, t.getMessage()));
+                if (EVENTHUB_RECONNECTION_WARNING_RATE > 1 && reconnectCount % EVENTHUB_RECONNECTION_WARNING_RATE == 1) {
+                    logger.warn(format("%s terminated is %b shutdown is %b, retry count %d  has error %s.", EventHub.this.toString(), isTerminated, isChannelShutdown,
+                            reconnectCount, t.getMessage()));
                 } else {
-                    logger.trace(format("%s terminated is %b shutdown is %b, retry count %d  has error %s.",
-                        EventHub.this.toString(), isTerminated, isChannelShutdown,
-                        reconnectCount, t.getMessage()));
+                    logger.trace(format("%s terminated is %b shutdown is %b, retry count %d  has error %s.", EventHub.this.toString(), isTerminated, isChannelShutdown,
+                            reconnectCount, t.getMessage()));
                 }
 
                 finishLatch.countDown();
@@ -299,13 +292,10 @@ public class EventHub implements Serializable {
                 if (t instanceof StatusRuntimeException) {
                     StatusRuntimeException sre = (StatusRuntimeException) t;
                     Status sreStatus = sre.getStatus();
-                    if (EVENTHUB_RECONNECTION_WARNING_RATE > 1
-                        && reconnectCount % EVENTHUB_RECONNECTION_WARNING_RATE == 1) {
-                        logger.warn(format("%s :StatusRuntimeException Status %s.  Description %s ", EventHub.this,
-                            sreStatus + "", sreStatus.getDescription()));
+                    if (EVENTHUB_RECONNECTION_WARNING_RATE > 1 && reconnectCount % EVENTHUB_RECONNECTION_WARNING_RATE == 1) {
+                        logger.warn(format("%s :StatusRuntimeException Status %s.  Description %s ", EventHub.this, sreStatus + "", sreStatus.getDescription()));
                     } else {
-                        logger.trace(format("%s :StatusRuntimeException Status %s.  Description %s ", EventHub.this,
-                            sreStatus + "", sreStatus.getDescription()));
+                        logger.trace(format("%s :StatusRuntimeException Status %s.  Description %s ", EventHub.this, sreStatus + "", sreStatus.getDescription()));
                     }
 
                     try {
@@ -383,14 +373,13 @@ public class EventHub implements Serializable {
         this.transactionContext = transactionContext;
 
         PeerEvents.Register register = PeerEvents.Register.newBuilder()
-            .addEvents(PeerEvents.Interest.newBuilder().setEventType(PeerEvents.EventType.BLOCK).build()).build();
+                .addEvents(PeerEvents.Interest.newBuilder().setEventType(PeerEvents.EventType.BLOCK).build()).build();
         PeerEvents.Event.Builder blockEventBuilder = PeerEvents.Event.newBuilder().setRegister(register)
-            .setCreator(transactionContext.getIdentity().toByteString())
-            .setTimestamp(ProtoUtils.getCurrentFabricTimestamp());
+                .setCreator(transactionContext.getIdentity().toByteString())
+                .setTimestamp(ProtoUtils.getCurrentFabricTimestamp());
 
         if (null != clientTLSCertificateDigest) {
-            logger.trace("Setting clientTLSCertificate digest for event registration to " + DatatypeConverter
-                .printHexBinary(clientTLSCertificateDigest));
+            logger.trace("Setting clientTLSCertificate digest for event registration to " + DatatypeConverter.printHexBinary(clientTLSCertificateDigest));
             blockEventBuilder.setTlsCertHash(ByteString.copyFrom(clientTLSCertificateDigest));
 
         }
@@ -398,9 +387,9 @@ public class EventHub implements Serializable {
         ByteString blockEventByteString = blockEventBuilder.build().toByteString();
 
         PeerEvents.SignedEvent signedBlockEvent = PeerEvents.SignedEvent.newBuilder()
-            .setEventBytes(blockEventByteString)
-            .setSignature(transactionContext.signByteString(blockEventByteString.toByteArray()))
-            .build();
+                .setEventBytes(blockEventByteString)
+                .setSignature(transactionContext.signByteString(blockEventByteString.toByteArray()))
+                .build();
         sender.onNext(signedBlockEvent);
     }
 
@@ -424,8 +413,7 @@ public class EventHub implements Serializable {
 
     @Override
     public String toString() {
-        return "EventHub{" + "id: " + id + ", name: " + getName() + ", channelName: " + channelName + ", url: "
-            + getUrl() + "}";
+        return "EventHub{" + "id: " + id + ", name: " + getName() + ", channelName: " + channelName + ", url: " + getUrl() + "}";
     }
 
     public synchronized void shutdown() {
@@ -452,8 +440,7 @@ public class EventHub implements Serializable {
         }
 
         if (null != channelName) {
-            throw new InvalidArgumentException(
-                format("Can not add event hub  %s to channel %s because it already belongs to channel %s.",
+            throw new InvalidArgumentException(format("Can not add event hub  %s to channel %s because it already belongs to channel %s.",
                     name, channel.getName(), channelName));
         }
         logger.debug(toString() + " set to channel: " + channel);
@@ -482,6 +469,7 @@ public class EventHub implements Serializable {
          * Called when a disconnect is detected.
          *
          * @param eventHub
+         * @throws EventHubException
          */
         void disconnected(EventHub eventHub) throws EventHubException;
 
