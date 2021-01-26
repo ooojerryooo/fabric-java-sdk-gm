@@ -245,7 +245,7 @@ public class HFCAClient {
      * @param url        Http URL for the Fabric's certificate authority services endpoint
      * @param properties PEM used for SSL .. not implemented.
      *                   <p>
-     *                   Supported properties
+     *                   es
      *                   <ul>
      *                   <li>pemFile - File location for x509 pem certificate for SSL.</li>
      *                   <li>allowAllHostNames - boolen(true/false) override certificates CN Host matching -- for development only.</li>
@@ -418,8 +418,8 @@ public class HFCAClient {
      * @throws EnrollmentException
      * @throws InvalidArgumentException
      */
-    public Enrollment enroll(String user, String subject,String secret) throws EnrollmentException, InvalidArgumentException {
-        return enroll(user, subject,secret, new EnrollmentRequest());
+    public Enrollment enroll(String user, String subject, String secret) throws EnrollmentException, InvalidArgumentException {
+        return enroll(user, subject, secret, new EnrollmentRequest());
     }
 
     /**
@@ -432,8 +432,75 @@ public class HFCAClient {
      * @throws EnrollmentException
      * @throws InvalidArgumentException
      */
+    public String enroll(String user, String secret, EnrollmentRequest req) throws EnrollmentException, InvalidArgumentException {
 
-    public Enrollment enroll(String user, String subject,String secret, EnrollmentRequest req) throws EnrollmentException, InvalidArgumentException {
+        if (Utils.isNullOrEmpty(user)) {
+            throw new InvalidArgumentException("enrollment user is not set");
+        }
+        if (Utils.isNullOrEmpty(secret)) {
+            throw new InvalidArgumentException("enrollment secret is not set");
+        }
+
+        if (cryptoSuite == null) {
+            throw new InvalidArgumentException("Crypto primitives not set.");
+        }
+
+        setUpSSL();
+
+        try {
+            String body = req.toJson();
+
+            String responseBody = httpPost(getURL(HFCA_ENROLL), body,
+                    new UsernamePasswordCredentials(user, secret));
+
+            logger.debug("response:" + responseBody);
+
+            JsonReader reader = Json.createReader(new StringReader(responseBody));
+            JsonObject jsonst = (JsonObject) reader.read();
+
+            boolean success = jsonst.getBoolean("success");
+            logger.debug(format("[HFCAClient] enroll success:[%s]", success));
+
+            if (!success) {
+                throw new EnrollmentException(format("FabricCA failed enrollment for user %s response success is false.", user));
+            }
+
+            JsonObject result = jsonst.getJsonObject("result");
+            if (result == null) {
+                throw new EnrollmentException(format("FabricCA failed enrollment for user %s - response did not contain a result", user));
+            }
+
+            Base64.Decoder b64dec = Base64.getDecoder();
+
+            String signedPem = new String(b64dec.decode(result.getString("Cert").getBytes(UTF_8)));
+            logger.debug(format("[HFCAClient] enroll returned pem:[%s]", signedPem));
+
+            return signedPem;
+
+        } catch (EnrollmentException ee) {
+            logger.error(format("url:%s, user:%s  error:%s", url, user, ee.getMessage()), ee);
+            throw ee;
+
+        } catch (Exception e) {
+            EnrollmentException ee = new EnrollmentException(format("Url:%s, Failed to enroll user %s ", url, user), e);
+            logger.error(e.getMessage(), e);
+            throw ee;
+        }
+
+    }
+
+    /**
+     * Enroll the user with member service
+     *
+     * @param user    Identity name to enroll
+     * @param subject Subject Info
+     * @param secret  Secret returned via registration
+     * @param req     Enrollment request with the following fields: hosts, profile, csr, label, keypair
+     * @return enrollment
+     * @throws EnrollmentException
+     * @throws InvalidArgumentException
+     */
+    public Enrollment enroll(String user, String subject, String secret, EnrollmentRequest req) throws EnrollmentException, InvalidArgumentException {
 
         logger.debug(format("url:%s enroll user: %s", url, user));
 
@@ -466,7 +533,7 @@ public class HFCAClient {
             }
 
             if (pem == null) {
-                String csr = cryptoSuite.generateCertificationRequest(user+","+subject, keypair);
+                String csr = cryptoSuite.generateCertificationRequest(user + "," + subject, keypair);
                 req.setCSR(csr);
             }
 
@@ -1663,7 +1730,7 @@ public class HFCAClient {
                 }
             };
 
-            sslContext.init(null, new TrustManager[] {tm}, null);
+            sslContext.init(null, new TrustManager[]{tm}, null);
         }
 
         @Override
